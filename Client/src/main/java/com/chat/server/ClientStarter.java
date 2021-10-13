@@ -1,5 +1,6 @@
 package com.chat.server;
 
+import com.chat.common.context.ConstantPool;
 import com.chat.common.entity.Message;
 import com.chat.common.handler.ProtostuffDecode;
 import com.chat.common.handler.ProtostuffEncode;
@@ -45,7 +46,7 @@ public class ClientStarter {
     private Bootstrap bootstrap = null;
 
     public ClientStarter(String host,int port) throws Exception {
-        this(host,port,new ExponentBackOffRetry(3000,Integer.MAX_VALUE,60 * 1000));
+        this(host,port,new ExponentBackOffRetry(3000, ConstantPool.RECONNECT_TIMES,60 * 1000));
     }
 
     public ClientStarter(String host, int port, RetryPolicy retryPolicy) throws Exception {
@@ -122,5 +123,6 @@ public class ClientStarter {
     public static void main(String[] args) throws Exception {
         ClientStarter clientStarter = new ClientStarter("127.0.0.1", 9000);
         clientStarter.connect();
+        clientStarter.getChannel().closeFuture().sync();
     }
 }

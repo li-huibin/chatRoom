@@ -30,7 +30,6 @@ public class Pinger extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
 //        super.channelActive(ctx);
-        System.out.println("客户端上线");
         this.channel = ctx.channel();
         ping(ctx.channel());
     }

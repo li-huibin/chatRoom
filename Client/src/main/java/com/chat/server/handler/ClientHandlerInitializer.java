@@ -23,7 +23,7 @@ public class ClientHandlerInitializer extends ChannelInitializer<SocketChannel> 
         if (clientStarter == null) {
             throw new Exception("ClientStarter can not be null.");
         }
-//        this.reconnectHandler = new ReconnectHandler(clientStarter);
+        this.reconnectHandler = new ReconnectHandler(clientStarter);
     }
 
     @Override

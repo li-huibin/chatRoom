@@ -9,4 +9,6 @@ package com.chat.common.context;
  **/
 public interface ConstantPool {
     public final int PING_DELAY = 3;
+    public final int RECONNECT_TIME_DELAY = 3;
+    public final int RECONNECT_TIMES = 10;
 }
