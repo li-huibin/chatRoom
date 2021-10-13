@@ -33,8 +33,12 @@ public class ServerStarter {
     private static EventLoopGroup workerGroup = null;
     /** 创建服务器端的启动对象 */
     private static ServerBootstrap bootstrap = null;
-    private static String host = "127.0.0.1";
-    private static int port = 9000;
+    private int port;
+
+    public ServerStarter(int port) {
+        this.port = port;
+        init();
+    }
 
     public void init() {
         bossGroup = new NioEventLoopGroup();
@@ -47,7 +51,7 @@ public class ServerStarter {
         workerGroup.shutdownGracefully();
     }
 
-    public static void connect() throws InterruptedException {
+    public void connect() throws InterruptedException {
         try {
             // 使用链式编程来配置参数
             // 设置两个线程组
@@ -98,7 +102,7 @@ public class ServerStarter {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        new ServerStarter().init();
-        connect();
+        ServerStarter serverStarter = new ServerStarter( 9000);
+        serverStarter.connect();
     }
 }
