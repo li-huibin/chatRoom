@@ -1,4 +1,5 @@
 package com.chat.client;
+
 import com.chat.client.handler.NettyServerHandler;
 import com.chat.common.handler.ProtostuffDecode;
 import com.chat.common.handler.ProtostuffEncode;
@@ -7,10 +8,11 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Class ServerStarter
@@ -65,6 +67,9 @@ public class ServerStarter {
 //                            pipeline.addLast("decoder", new StringDecoder());
                             pipeline.addLast("decoder",new ProtostuffDecode());
                             pipeline.addLast("encoder",new ProtostuffEncode());
+                            // IdleStateHandler的参数readerIdleTime参数指定超过3秒还没有收到客户端连接
+                            // 会触发IdleStateEvent事件并且交给下一个handler处理，下一个handler必须实现userEventTriggered方法处理对应事件
+                            pipeline.addLast(new IdleStateHandler(3,0,0, TimeUnit.SECONDS));
                             // 对workerGroup的SocketChannel设置处理器
                             pipeline.addLast(new NettyServerHandler());
                         }

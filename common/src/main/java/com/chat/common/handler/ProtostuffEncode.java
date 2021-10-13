@@ -1,6 +1,7 @@
 package com.chat.common.handler;
 
 import com.chat.common.entity.Message;
+import com.chat.common.protostuff.ProtostuffUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -15,7 +16,10 @@ import io.netty.handler.codec.MessageToByteEncoder;
 public class ProtostuffEncode extends MessageToByteEncoder<Message> {
     @Override
     protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-        out.writeInt(msg.getLength());
-        out.writeBytes(msg.getMessage());
+//        System.out.println("编码 = " + msg.toString());
+        byte[] serializer = ProtostuffUtil.serializer(msg);
+        // 包长度，用来解决拆包粘包问题
+        out.writeInt(serializer.length);
+        out.writeBytes(serializer);
     }
 }

@@ -10,40 +10,45 @@ import java.util.Arrays;
  * @Time: 2021-10-12 15:57
  **/
 public class Message {
-    /** 消息长度 */
-    private int length;
+    /** 消息类型 1-心跳检测；2-客户消息发送 */
+    private byte type;
     /** 消息体 */
-    private byte[] message;
+    private String message;
 
     public Message() {
     }
 
-    public Message(int length, byte[] message) {
-        this.length = length;
+    public Message(byte type, String message) {
+        this.type = type;
         this.message = message;
     }
 
-    public int getLength() {
-        return length;
+    public Message(String message) {
+        this.type = 2;
+        this.message = message;
     }
 
-    public void setLength(int length) {
-        this.length = length;
-    }
-
-    public byte[] getMessage() {
+    public String getMessage() {
         return message;
     }
 
-    public void setMessage(byte[] message) {
+    public void setMessage(String message) {
         this.message = message;
+    }
+
+    public byte getType() {
+        return type;
+    }
+
+    public void setType(byte type) {
+        this.type = type;
     }
 
     @Override
     public String toString() {
         return "Message{" +
-                "length=" + length +
-                ", message=" + Arrays.toString(message) +
+                "type=" + type +
+                ", message=" + message +
                 '}';
     }
 }

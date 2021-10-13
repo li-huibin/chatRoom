@@ -1,12 +1,12 @@
 package com.chat.client.handler;
 
 import com.chat.common.entity.Message;
-import com.chat.common.protostuff.ProtostuffUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
@@ -55,17 +55,16 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Message> {
      * @throws Exception
      */
     @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, Message msg) throws Exception {
-        String msgContext = new String(msg.getMessage(), CharsetUtil.UTF_8);
+    protected void channelRead0(final ChannelHandlerContext channelHandlerContext, final Message msg) throws Exception {
         if (!channelGroup.isEmpty()) {
             for (Channel channel : channelGroup) {
                 if (channel != channelHandlerContext.channel()) {
-                    String repMsg = "【"+ channel.remoteAddress() +"】: " + msgContext;
-                    Message message = new Message(repMsg.getBytes(CharsetUtil.UTF_8).length, repMsg.getBytes(CharsetUtil.UTF_8));
+                    String repMsg = "【"+ channel.remoteAddress() +"】: " + msg.getMessage();
+                    Message message = new Message(repMsg);
                     channel.writeAndFlush(message);
                 } else {
-                    String repMsg = "【发送消息】: " + msgContext;
-                    Message message = new Message(repMsg.getBytes(CharsetUtil.UTF_8).length, repMsg.getBytes(CharsetUtil.UTF_8));
+                    String repMsg = "【发送消息】: " + msg.getMessage();
+                    Message message = new Message(repMsg);
                     channel.writeAndFlush(message);
                 }
             }
@@ -99,7 +98,8 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Message> {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         System.out.println(ctx.channel().remoteAddress() + " 上线了");
         if (!channelGroup.isEmpty()) {
-            channelGroup.writeAndFlush("【"+ ctx.channel().remoteAddress() +"】 " + sdf.format(new Date(System.currentTimeMillis())) + " 上线了");
+            String msg = "【"+ ctx.channel().remoteAddress() +"】 " + sdf.format(new Date(System.currentTimeMillis())) + " 上线了";
+            channelGroup.writeAndFlush(new Message(msg));
         }
         channelGroup.add(ctx.channel());
     }
@@ -108,7 +108,26 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Message> {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         if (!channelGroup.isEmpty()) {
             channelGroup.remove(ctx.channel());
-            channelGroup.writeAndFlush(ctx.channel().remoteAddress() + " 下线了");
+            String msg = ctx.channel().remoteAddress() + " 下线了";
+            channelGroup.writeAndFlush(new Message(msg));
+        }
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        System.out.println("心跳检测服务端");
+        IdleStateEvent event = (IdleStateEvent)evt;
+        switch (event.state()) {
+            case WRITER_IDLE:
+                System.out.println("写空闲");
+                break;
+            case READER_IDLE:
+                System.out.println("读空闲");
+                break;
+            case ALL_IDLE:
+                System.out.println("读写空闲");
+                break;
+            default:
         }
     }
 }

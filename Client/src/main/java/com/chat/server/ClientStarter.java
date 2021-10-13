@@ -9,15 +9,11 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
-import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Class ClientStarter
@@ -99,12 +95,12 @@ public class ClientStarter {
                     }
                 }
             });
-            Channel channel = channelFuture.channel();
+            final Channel channel = channelFuture.channel();
             //获取channel
             Scanner scanner = new Scanner(System.in);
             while (scanner.hasNextLine()) {
                 String str = scanner.nextLine();
-                Message message = new Message(str.getBytes(CharsetUtil.UTF_8).length,str.getBytes(CharsetUtil.UTF_8));
+                Message message = new Message(str);
                 channel.writeAndFlush(message);
             }
 

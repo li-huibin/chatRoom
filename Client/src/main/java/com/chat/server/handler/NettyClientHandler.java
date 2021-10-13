@@ -4,7 +4,6 @@ import com.chat.common.entity.Message;
 import com.chat.server.ClientStarter;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.util.CharsetUtil;
 
 /**
  * @Class NettyClientHandler
@@ -52,7 +51,9 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<Message> {
      */
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, Message s) throws Exception {
-        System.out.println(new String(s.getMessage(), CharsetUtil.UTF_8));
+        if (s.getType() > 1) {
+            System.out.println(s.getMessage());
+        }
     }
 
     @Override
