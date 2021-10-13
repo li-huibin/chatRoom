@@ -11,8 +11,12 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
+import java.net.SocketAddress;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @Class NettyServerHandler
@@ -65,10 +69,25 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Message> {
         } else {
             if (!channelGroup.isEmpty()) {
                 for (Channel channel : channelGroup) {
-                    if (channel != channelHandlerContext.channel()) {
+
+                    if (channel != channelHandlerContext.channel() && (msg.getMessage().contains("@All") || msg.getMessage().contains("@全体") || msg.getMessage().contains("@所有"))) {
                         String repMsg = "【" + channel.remoteAddress() + "】: " + msg.getMessage();
                         Message message = new Message(repMsg);
                         channel.writeAndFlush(message);
+                    }else if (channel != channelHandlerContext.channel() && msg.getMessage().contains("@")) {
+                        String pattern = "@((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}";
+                        String message = msg.getMessage();
+                        System.out.println("message = " + message);
+                        String[] split = message.split(pattern);
+                        if (split.length == 2) {
+                            String s = message.replaceAll("/", "");
+                            String s1 = s.split(":")[0];
+                            if (s1.equals(message.replaceAll(split[1],""))) {
+                                String repMsg = "【" + channel.remoteAddress() + "】: " + msg.getMessage();
+                                Message msgObj = new Message(repMsg);
+                                channel.writeAndFlush(msgObj);
+                            }
+                        }
                     } else {
                         String repMsg = "【发送消息】: " + msg.getMessage();
                         Message message = new Message(repMsg);
