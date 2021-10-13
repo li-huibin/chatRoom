@@ -2,6 +2,7 @@ package com.chat.client.handler;
 
 import com.chat.common.entity.Message;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -23,6 +24,7 @@ import java.util.Date;
  * 更新时间        更新人        更新位置        更新内容
  * 2021/10/10       lihuibin       新建           新建
  */
+@ChannelHandler.Sharable
 public class NettyServerHandler extends SimpleChannelInboundHandler<Message> {
 
     // GlobalEventExcutor.INSTANCE是全局的时间执行器，是一个单例
@@ -55,22 +57,26 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Message> {
      * @throws Exception
      */
     @Override
-    protected void channelRead0(final ChannelHandlerContext channelHandlerContext, final Message msg) throws Exception {
-        if (!channelGroup.isEmpty()) {
-            for (Channel channel : channelGroup) {
-                if (channel != channelHandlerContext.channel()) {
-                    String repMsg = "【"+ channel.remoteAddress() +"】: " + msg.getMessage();
-                    Message message = new Message(repMsg);
-                    channel.writeAndFlush(message);
-                } else {
-                    String repMsg = "【发送消息】: " + msg.getMessage();
-                    Message message = new Message(repMsg);
-                    channel.writeAndFlush(message);
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, Message msg) throws Exception {
+        if (msg.getType() == 1) {
+            String repMsg = "【心跳检测】: " + msg.getMessage();
+            Message message = new Message((byte) 1,repMsg);
+            channelHandlerContext.channel().writeAndFlush(message);
+        } else {
+            if (!channelGroup.isEmpty()) {
+                for (Channel channel : channelGroup) {
+                    if (channel != channelHandlerContext.channel()) {
+                        String repMsg = "【" + channel.remoteAddress() + "】: " + msg.getMessage();
+                        Message message = new Message(repMsg);
+                        channel.writeAndFlush(message);
+                    } else {
+                        String repMsg = "【发送消息】: " + msg.getMessage();
+                        Message message = new Message(repMsg);
+                        channel.writeAndFlush(message);
+                    }
                 }
             }
         }
-
-
     }
 
     /**
@@ -113,21 +119,4 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Message> {
         }
     }
 
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        System.out.println("心跳检测服务端");
-        IdleStateEvent event = (IdleStateEvent)evt;
-        switch (event.state()) {
-            case WRITER_IDLE:
-                System.out.println("写空闲");
-                break;
-            case READER_IDLE:
-                System.out.println("读空闲");
-                break;
-            case ALL_IDLE:
-                System.out.println("读写空闲");
-                break;
-            default:
-        }
-    }
 }

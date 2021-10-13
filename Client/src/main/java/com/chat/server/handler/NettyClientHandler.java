@@ -16,21 +16,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * 2021/10/10       lihuibin       新建           新建
  */
 public class NettyClientHandler extends SimpleChannelInboundHandler<Message> {
-    /**
-     * 当客户端连接服务器完成就会触发该方法
-     * @param ctx
-     * @throws Exception
-     */
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-//        System.out.println("channelActive");
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("重新连接客户端");
-        ClientStarter.getClient().connect();
-    }
 
     /**
      * 当通道有读取事件时就会触发，即服务端发送数据给客户端
@@ -54,11 +39,5 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<Message> {
         if (s.getType() > 1) {
             System.out.println(s.getMessage());
         }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
-        ctx.close();
     }
 }

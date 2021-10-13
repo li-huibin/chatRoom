@@ -3,7 +3,10 @@ package com.chat.server;
 import com.chat.common.entity.Message;
 import com.chat.common.handler.ProtostuffDecode;
 import com.chat.common.handler.ProtostuffEncode;
+import com.chat.server.handler.ClientHandlerInitializer;
+import com.chat.server.handler.ExponentBackOffRetry;
 import com.chat.server.handler.NettyClientHandler;
+import com.chat.server.handler.RetryPolicy;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -29,73 +32,57 @@ public class ClientStarter {
 
     private String host = "";
     private int port = 0;
-    /** 客户端需要一个事件循环组 */
-    private NioEventLoopGroup group = null;
 
-    private static ClientStarter client;
+    // 重连策略
+    private RetryPolicy retryPolicy;
+    private NioEventLoopGroup group;
+    private Channel channel;
+
     /**
      * 创建客户端启动对象
      * 注意客户端使用的不是ServerBootstrap 而是Bootstrap
      */
     private Bootstrap bootstrap = null;
 
-    public ClientStarter(String host,int port) {
+    public ClientStarter(String host,int port) throws Exception {
+        this(host,port,new ExponentBackOffRetry(3000,Integer.MAX_VALUE,60 * 1000));
+    }
+
+    public ClientStarter(String host, int port, RetryPolicy retryPolicy) throws Exception {
         this.host = host;
         this.port = port;
-        group = new NioEventLoopGroup();
+        this.retryPolicy = retryPolicy;
+        init();
+    }
+
+    public RetryPolicy getRetryPolicy() {
+        return this.retryPolicy;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public void init() throws Exception {
+        /** 客户端需要一个事件循环组 */
+        this.group = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
-    }
-
-    public static ClientStarter build(String host, int port) {
-        client = new ClientStarter(host,port);
-        return client;
-    }
-
-    public static ClientStarter getClient() {
-        return client;
-    }
-
-    public void init() {
         // 设置相关参数
         // 设置线程组
         this.bootstrap.group(group)
                 // 使用NioSocketChannel作为客户端的通道实现
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_KEEPALIVE, true)
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel socketChannel) throws Exception {
-                        //加入处理器
-                        ChannelPipeline pipeline = socketChannel.pipeline();
-//                        pipeline.addLast("encoder", new StringEncoder());
-//                        pipeline.addLast("decoder", new StringDecoder());
-                        pipeline.addLast("decoder",new ProtostuffDecode());
-                        pipeline.addLast("encoder",new ProtostuffEncode());
-                        pipeline.addLast(new NettyClientHandler());
-                    }
-                });
+                .handler(new ClientHandlerInitializer(ClientStarter.this));
         System.out.println("netty client start...");
     }
 
     public void connect() throws InterruptedException {
-        try {
+//        try {
             // 启动客户端去链接服务器端
             ChannelFuture channelFuture = bootstrap.connect(this.host, this.port).sync();
-            channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
-
-                @Override
-                public void operationComplete(Future<? super Void> future)
-                        throws Exception {
-                    if (future.isSuccess()) {
-                        System.out.println("客户端启动中...");
-                    }
-                    if (future.isDone()) {
-                        System.out.println("客户端启动成功...OK！");
-                        System.out.println("*******************************");
-                    }
-                }
-            });
-            final Channel channel = channelFuture.channel();
+            channelFuture.addListener(getConnectionListener());
+            this.channel = channelFuture.channel();
             //获取channel
             Scanner scanner = new Scanner(System.in);
             while (scanner.hasNextLine()) {
@@ -103,19 +90,37 @@ public class ClientStarter {
                 Message message = new Message(str);
                 channel.writeAndFlush(message);
             }
-
+//            channelFuture.channel().writeAndFlush(new Message("sakjdfklsajfk"));
             channelFuture.channel().closeFuture().sync();
             scanner.close();
 
-        } finally {
-            group.shutdownGracefully();
-        }
+//        } finally {
+//            group.shutdownGracefully();
+//        }
     }
 
 
-    public static void main(String[] args) throws InterruptedException {
-        ClientStarter clientStarter = ClientStarter.build("127.0.0.1", 9000);
-        clientStarter.init();
+    private ChannelFutureListener getConnectionListener() {
+        return new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                if (future.isSuccess()) {
+                    System.out.println("客户端启动中...");
+                }
+                if (future.isDone()) {
+                    System.out.println("客户端启动成功...OK！");
+                    System.out.println("*******************************");
+                }
+                if (!future.isSuccess()) {
+                    System.out.println("ssssssssssss");
+                    future.channel().pipeline().fireChannelActive();
+                }
+            }
+        };
+    }
+
+    public static void main(String[] args) throws Exception {
+        ClientStarter clientStarter = new ClientStarter("127.0.0.1", 9000);
         clientStarter.connect();
     }
 }

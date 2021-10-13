@@ -1,6 +1,7 @@
 package com.chat.client;
 
 import com.chat.client.handler.NettyServerHandler;
+import com.chat.client.handler.ServerHandlerInitializer;
 import com.chat.common.handler.ProtostuffDecode;
 import com.chat.common.handler.ProtostuffEncode;
 import io.netty.bootstrap.ServerBootstrap;
@@ -59,21 +60,7 @@ public class ServerStarter {
                     //让客户端保持长期活动状态
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
                     // 创建通道初始化对象，设置初始化参数
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            ChannelPipeline pipeline = socketChannel.pipeline();
-//                            pipeline.addLast("encoder", new StringEncoder());
-//                            pipeline.addLast("decoder", new StringDecoder());
-                            pipeline.addLast("decoder",new ProtostuffDecode());
-                            pipeline.addLast("encoder",new ProtostuffEncode());
-                            // IdleStateHandler的参数readerIdleTime参数指定超过3秒还没有收到客户端连接
-                            // 会触发IdleStateEvent事件并且交给下一个handler处理，下一个handler必须实现userEventTriggered方法处理对应事件
-                            pipeline.addLast(new IdleStateHandler(3,0,0, TimeUnit.SECONDS));
-                            // 对workerGroup的SocketChannel设置处理器
-                            pipeline.addLast(new NettyServerHandler());
-                        }
-                    });
+                    .childHandler(new ServerHandlerInitializer());
             System.out.println("netty server start....");
 
             // 绑定一个端口并且同步，生成了一个ChannelFuture异步对象，通过isDone()等方法可以判断异步事件的执行情况
