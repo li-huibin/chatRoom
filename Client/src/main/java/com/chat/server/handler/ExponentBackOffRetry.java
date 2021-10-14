@@ -46,6 +46,8 @@ public class ExponentBackOffRetry implements RetryPolicy{
             retryCount = MAX_RETRIES_LIMIT;
         }
         long sleepMs = baseSleepTimeMs *  Math.max(1, random.nextInt(1 << retryCount));
+        System.out.println("retryCount = " + retryCount);
+        System.out.println("1<<retryCount = " + (1<<retryCount));
         if (sleepMs > maxSleepMs) {
             System.out.println(String.format("Sleep extension too large (%d). Pinning to %d", sleepMs, maxSleepMs));
             sleepMs = maxSleepMs;

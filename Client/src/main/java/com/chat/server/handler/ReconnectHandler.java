@@ -66,7 +66,7 @@ public class ReconnectHandler extends ChannelInboundHandlerAdapter {
                     }
                 }
                 // 自动重连时间间隔后期应该改成区某个时间区间内的随机时间间隔(例如：[0,10]时间区间，new Random().nextInt(10);去0~10之间的随机数)，这样可以减少服务器重连压力
-            }, ConstantPool.RECONNECT_TIME_DELAY, TimeUnit.SECONDS);
+            }, sleepTimeMs, TimeUnit.MILLISECONDS);
         }
     }
 }
